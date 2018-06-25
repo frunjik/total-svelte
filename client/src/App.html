@@ -1,0 +1,55 @@
+<div>
+	<a href="http://localhost:8000/index.html">reload</a>&nbsp;|
+	<a on:click='loadFile("client/src/App.html")'>client/src/App.html</a>&nbsp;|
+	<a on:click='loadFile("client/src/main.js")'>client/src/main.js</a>&nbsp;|
+	<a on:click='loadFile("client/public/global.css")'>client/public/global.css</a>&nbsp;|
+	<a on:click='loadFile("server/controllers/files.js")'>server/controllers/files.js</a>&nbsp;|
+	<a on:click='loadFile("server/controllers/client.js")'>server/controllers/client.js</a>
+</div>
+<div>
+	<button on:click='load()' style="width: 5%">Load</button>
+	<input bind:value='filename' on:enter='load()' style="width: 89%">
+	<button on:click='save()' style="width: 5%">Save</button>
+</div>
+<div>
+	<textarea bind:value="source" style="width: 100%; height: 910px;"></textarea>
+</div>
+<script>
+	export default {
+		methods: {
+			save() {
+				const {source, filename} = this.get();
+				fetch(`http://127.0.0.1:8000/api/putfile?name=${filename}`, {
+					method: 'POST',
+					headers: {
+						'Accept': 'application/json',
+						'Content-Type': 'application/json'
+					},
+					body: source
+				});
+			},
+			async load() {
+				const {filename} = this.get();
+				const source = await fetch(`http://127.0.0.1:8000/api/getfile?name=${filename}`).then(r => r.json());
+				this.set({source: source.data});
+			},
+			loadFile(name) {
+				this.set({filename: name});
+				this.load();
+			}
+		},
+		events: {
+			enter(node, callback) {
+				function handleKeydown(event) {
+					if (event.which === 13) callback();
+				}
+				node.addEventListener('keydown', handleKeydown);
+				return {
+					destroy() {
+						node.removeEventListener('keydown', handleKeydown);
+					}
+				};
+			}
+		}		
+	};
+</script>
